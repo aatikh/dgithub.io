@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>Сценарий разговора — Мастер Бобр</title>
+    <style>
+        :root {
+            --primary-color: #0a7f4d;
+            --path-color: #c3e6cb; /* Цвет фона пройденного пути */
+            --current-color: #198754; /* Цвет рамки текущего активного узла */
+            --text-color: #212529;
+            --bg-color: #f8f9fa;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+        }
+        
+        .app-container {
+            width: 100%;
+            max-width: 800px;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+            overflow: hidden;
+        }
+        
+        header {
+            background: linear-gradient(135deg, var(--primary-color) 0%, #14a46c 100%);
+            color: white;
+            padding: 20px 30px;
+            text-align: center;
+        }
+        
+        h1 { margin: 0; font-size: 22px; font-weight: 600; }
+        .subtitle { opacity: 0.9; font-size: 14px; margin-top: 4px; }
+        
+        main {
+            padding: 25px 30px;
+        }
+        
+        #dialogue-box {
+            min-height: 80px;
+            padding: 20px;
+            background-color: #fff;
+            border-left: 4px solid var(--primary-color);
+            border-radius: 8px;
+            font-size: 17px;
+            line-height: 1.5;
+            margin-bottom: 25px;
+            transition: all 0.2s ease;
+        }
+        
+        #options-box {
+            display: grid;
+            gap: 12px;
+        }
+        
+        .option-btn {
+            background: #fff;
+            border: 2px solid #dee2e6;
+            border-radius: 10px;
+            padding: 16px 20px;
+            text-align: left;
+            font-size: 16px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            position: relative;
+            z-index: 1;
+        }
+        
+        /* Состояние кнопки, которая находится НА ПРОЙДЕННОМ ПУТИ */
+        .option-btn.in-path {
+            background-color: var(--path-color);
+            border-color: transparent;
+            font-weight: 500;
+            color: #1a1a1a;
+        }
+        
+        /* Состояние ТЕКУЩЕЙ активной кнопки (куда можно нажать сейчас) */
+        .option-btn.current-node {
+            border-color: var(--current-color);
+            background-color: #ffffff;
+            box-shadow: 0 0 0 4px rgba(25, 135, 84, 0.15); /* Мягкое свечение вокруг */
+            font-weight: bold;
+            transform: translateY(-1px);
+            z-index: 2;
+        }
+        
+        .option-btn:hover:not(.in-path):not(.current-node) {
+            border-color: var(--primary-color);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+        }
+        
+        .controls {
+            display: flex;
+            gap: 12px;
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 1px dashed #e0e0e0;
+        }
+        
+        button.control-btn {
+            flex: 1;
+            padding: 14px;
+            border: none;
+            border-radius: 8px;
+            font-size: 15px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+        
+        #reset-btn {
+            background: #fff;
+            color: #555;
+            border: 1px solid #ddd;
+        }
+        #reset-btn:hover { background: #f8f9fa; border-color: #ccc; }
+        
+        #path-btn {
+            background: var(--primary-color);
+            color: white;
+        }
+        #path-btn:hover { background: #08643f; }
+    </style>
+</head>
+<body>
+<div class="app-container">
+    <header>
+        <h1>Мастер Бобр | Сценарий разговора</h1>
+        <div class="subtitle">Натяжные потолки • Коммерческий отдел</div>
+    </header>
+    <main>
+        <div id="dialogue-box"></div>
+        <div id="options-box"></div>
+        <div class="controls">
+            <button id="reset-btn" class="control-btn">🔄 Сбросить</button>
+            <button id="path-btn" class="control-btn">📄 Показать маршрут</button>
+        </div>
+    </main>
+</div>
+
+<script>
+// --- ДАННЫЕ СКРИПТА ---
+const scriptData = [
+    {id: 1, text: 'Иван, здравствуйте! Это Сергей, Мастер Бобр! Звоню Вам из коммерческого отдела, чтобы согласовать подписание договора и зафиксировать стоимость с учетом примененных скидок и акций!', options: [{nextId: 2, label: 'Далее'}]},
+    
+    // Блок 2: Уточнение статуса
+    {id: 2, text: '', options: [
+        {nextId: 3, label: 'Клиент согласен на договор'},
+        {nextId: 4, label: 'Клиент лоялен (есть возражения)'},
+        {nextId: 5, label: 'Клиент не лоялен'}
+    ]},
+
+    // Блок 3: Согласен
+    {id: 3, text: '"Отлично, я сейчас подготовлю для Вас договор и ссылку на предоплату. На какой мессенджер Вам лучше отправить всё?"', options: []},
+
+    // Блок 4: Лоялен
+    {id: 4, text: '"Подскажите пожалуйста, обычно у нас на адресе заключаются договора, что пошло не так? Обычно мы фиксируем смету прямо на адресе..."', options: [
+        {nextId: 6, label: 'Дорого'},
+        {nextId: 7, label: 'Сравниваю / жду другие компании'},
+        {nextId: 10, label: 'Выбрали других'}
+    ]},
+
+    // Блок 5: Не лоялен
+    {id: 5, text: '"Иван, я Вас услышал, у нас по статистике больше 90% договоров подписываются на адресе, что пошло не так?"', options: [
+        {nextId: 6, label: 'Дорого'},
+        {nextId: 7, label: 'Сравниваю / жду другие компании'},
+        {nextId: 10, label: 'Выбрали других'}
+    ]},
+
+    // === ВОЗРАЖЕНИЕ ДОРОГО ===
+    {id: 6, text: '"Каковы Ваши ожидания от стоимости?\n\nУслышал Вас, давайте поступим так, я Вам отправлю несколько вариантов смет под Ваш бюджет...\n\nНа этом номере Макс или ТГ у Вас есть? Я Вам отправлю туда в течении дня.\nПозвоню завтра в интервале с 15 до 17, хорошо?"', options: []},
+
+    // === ВОЗРАЖЕНИЕ СРАВНИВАЮ ===
+    {id: 7, text: '"Иван, отлично, что вы собираете предложения. Разброс цен на рынке огромный... Скидывайте их расчеты мне в мессенджер, я сделаю бесплатный аудит (сравнение), отмечу красным то, где они сэкономят за счет вашего будущего комфорта. Хорошо?"', options: []},
+
+    // === ВЫБРАЛИ ДРУГИХ ===
+    {id: 10, text: '"Свои человек — это отлично, лояльность бесценна. Обычно проблема своих бригад в том, что они падают в обморок при виде дизайн-проекта... Отдайте нам хотя бы 1 помещение, чтобы мы показали качество работы и гарантии."', options: []}
+];
+
+// --- ЛОГИКА РАБОТЫ ИНТЕРФЕЙСА ---
+let currentPath = []; // Массив ID узлов, по которым прошел пользователь
+let pathMap = {};     // Объект для быстрого поиска: ключ=ID_узла, значение=true
+
+const dialogueBox = document.getElementById('dialogue-box');
+const optionsBox = document.getElementById('options-box');
+
+function renderNode(id) {
+    const node = scriptData.find(n => n.id === id);
+    if (!node) return;
+
+    // Добавляем текущий шаг в историю пути
+    currentPath.push(id);
+    pathMap[id] = true;
+
+    dialogueBox.innerText = node.text;
+    optionsBox.innerHTML = '';
+
+    node.options.forEach(opt => {
+        const btn = document.createElement('button');
+        btn.className = 'option-btn';
+        
+        // Проверяем, входит ли следующая точка в наш путь
+        if (pathMap[opt.nextId]) {
+            btn.classList.add('in-path');
+        } else {
+            // Если это первый доступный следующий шаг после нашего пути — делаем его текущим
+            const nextNode = scriptData.find(n => n.id === opt.nextId);
+            if (nextNode && !pathMap[opt.nextId]) {
+                btn.classList.add('current-node');
+            }
+        }
+
+        btn.innerText = opt.label;
+        btn.onclick = () => {
+            cleanNodes(); // Очищаем старые метки перед рендером нового шага
+            renderNode(opt.nextId);
+        };
+        optionsBox.appendChild(btn);
+    });
+}
+
+// Функция очистки классов перед обновлением кнопок
+function cleanNodes() {
+    document.querySelectorAll('.option-btn').forEach(btn => {
+        btn.classList.remove('in-path', 'current-node');
+    });
+}
+
+document.getElementById('reset-btn').onclick = () => {
+    currentPath = [];
+    pathMap = {};
+    renderNode(1);
+};
+
+document.getElementById('path-btn').onclick = () => {
+    const route = currentPath.map(id => {
+        const node = scriptData.find(n => n.id === id);
+        return node ? node.text : '';
+    }).join('\n\n--------------------\n\n');
+    alert(route);
+};
+
+// Запуск скрипта
+renderNode(1);
+</script>
+
+</body>
+</html>
