@@ -1,0 +1,384 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>Скрипт продаж | Мастер Бобр</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            background-color: #f4f7f6;
+            color: #333;
+            line-height: 1.6;
+            padding: 20px;
+            max-width: 900px;
+            margin: 0 auto;
+        }
+        
+        .container {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+            padding: 30px;
+            position: relative;
+        }
+
+        h1 {
+            text-align: center;
+            color: #2c3e50;
+            margin-bottom: 10px;
+        }
+
+        .subtitle {
+            text-align: center;
+            color: #7f8c8d;
+            margin-bottom: 30px;
+            font-size: 14px;
+        }
+
+        /* Реплика менеджера */
+        .manager-speech {
+            background-color: #ecf0f1;
+            border-left: 5px solid #3498db;
+            padding: 18px 22px;
+            margin-bottom: 25px;
+            border-radius: 0 8px 8px 0;
+            transition: all 0.3s ease;
+        }
+
+        .manager-label {
+            display: block;
+            font-weight: bold;
+            color: #2980b9;
+            font-size: 14px;
+            margin-bottom: 8px;
+        }
+
+        .manager-text {
+            font-size: 16px;
+            margin: 0;
+        }
+
+        /* Варианты клиента */
+        .options {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .option-btn {
+            padding: 15px 20px;
+            border: 2px solid transparent;
+            border-radius: 8px;
+            background-color: #fff;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            font-size: 15px;
+            text-align: left;
+            position: relative;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+        }
+
+        .option-btn:hover {
+            background-color: #f8f9fa;
+            transform: translateX(4px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+
+        /* Активный путь подсветки */
+        .active-path {
+            border-color: #27ae60 !important;
+            background-color: #e8f8f5 !important;
+            color: #27ae60;
+            font-weight: 600;
+        }
+
+        .active-manager {
+            border-left-color: #27ae60 !important;
+            background-color: #e8f8f5 !important;
+        }
+
+        /* Кнопки управления внизу */
+        .controls {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 1px dashed #bdc3c7;
+        }
+
+        .control-btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+
+        #resetBtn { background-color: #95a5a6; color: white; }
+        #showRouteBtn { background-color: #3498db; color: white; }
+
+        /* Модальное окно маршрута */
+        .route-modal {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background: rgba(0,0,0,0.8);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+        .route-content {
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            max-width: 600px;
+            max-height: 80vh;
+            overflow-y: auto;
+            position: relative;
+        }
+        .close-route {
+            position: absolute;
+            top: 15px; right: 20px;
+            font-size: 24px;
+            cursor: pointer;
+            color: #7f8c8d;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>Мастер Бобр</h1>
+    <div class="subtitle">Сценарий исходящего звонка • Коммерческий отдел</div>
+
+    <!-- Блок 1: Приветствие -->
+    <div id="block-1" class="manager-speech active-manager">
+        <span class="manager-label">Менеджер:</span>
+        <p id="text-1" class="manager-text">Иван, здравствуйте! Это Сергей, компания «Мастер Бобр». Звоню из коммерческого отдела, чтобы согласовать подписание договора и зафиксировать стоимость с учетом примененных скидок и акций.</p>
+    </div>
+    
+    <div id="options-1" class="options">
+        <button class="option-btn active-path" data-next-id="block-2-a">Да, давайте договор.</button>
+        <button class="option-btn" data-next-id="block-2-b">Есть вопросы / Что-то пошло не так.</button>
+    </div>
+
+    <!-- === ПУТЬ А: Клиент согласен на договор === -->
+    <div id="block-2-a" style="display:none;">
+        <div class="manager-speech active-manager">
+            <span class="manager-label">Менеджер:</span>
+            <p class="manager-text">Отлично, я сейчас подготовлю для Вас договор и ссылку на предоплату. На какой мессенджер Вам лучше отправить всё?</p>
+        </div>
+        <div class="options">
+            <button class="option-btn active-path" data-next-id="end-success">WhatsApp / Telegram (Конец)</button>
+        </div>
+    </div>
+
+    <!-- === ПУТЬ Б: Уточнение статуса (есть возражения) === -->
+    <div id="block-2-b" style="display:none;">
+        <div class="manager-speech active-manager">
+            <span class="manager-label">Менеджер:</span>
+            <p class="manager-text">Подскажите пожалуйста, обычно у нас договоры заключаются на адресе после замера. Что пошло не так? Смущают условия или просто удобнее изучить документ в спокойной обстановке?</p>
+        </div>
+        <div class="options">
+            <button class="option-btn active-path" data-next-id="block-3-price">Вопросы к цене.</button>
+            <button class="option-btn" data-next-id="block-3-compare">Сравниваю с другими компаниями.</button>
+            <button class="option-btn" data-next-id="block-3-chose-others">Выбрал других мастеров.</button>
+            <button class="option-btn" data-next-id="block-3-not-hot">Монтаж пока не горит.</button>
+            <button class="option-btn" data-next-id="block-3-measure">Навязали замер.</button>
+        </div>
+    </div>
+
+    <!-- ОВ ДОРОГО (Цена) -->
+    <div id="block-3-price" style="display:none;">
+        <div class="manager-speech active-manager">
+            <span class="manager-label">Менеджер:</span>
+            <p class="manager-text">По цене понял вас. А помимо этого что вам понравилось? Может, гарантия, работа инженера-замерщика или услуга чистого монтажа?</p>
+        </div>
+        <div class="options">
+            <button class="option-btn active-path" data-next-id="block-3-price-2">Всё равно дорого.</button>
+        </div>
+    </div>
+
+    <div id="block-3-price-2" style="display:none;">
+        <div class="manager-speech active-manager">
+            <span class="manager-label">Менеджер:</span>
+            <p class="manager-text">Давайте тогда вернемся к вопросу о цене. Каковы ваши ожидания от стоимости натяжных потолков?</p>
+        </div>
+        <div class="options">
+            <button class="option-btn active-path" data-next-id="block-3-price-3">Называет сумму ниже нашей.</button>
+            <button class="option-btn" data-next-id="block-3-send-offers">Не знаю, собираю предложения.</button>
+        </div>
+    </div>
+
+    <div id="block-3-price-3" style="display:none;">
+        <div class="manager-speech active-manager">
+            <span class="manager-label">Менеджер:</span>
+            <p class="manager-text">Услышал вас. Ваша цель — остаться в бюджете. Я могу пойти двумя путями: либо отправить детализацию самого дорогого блока работ, либо подготовить альтернативную спецификацию под ваш лимит. Какой вариант сэкономит нам больше времени?</p>
+        </div>
+        <div class="options">
+            <button class="option-btn active-path" data-next-id="block-3-send-offers">Отправьте варианты смет.</button>
+        </div>
+    </div>
+
+    <div id="block-3-send-offers" style="display:none;">
+        <div class="manager-speech active-manager">
+            <span class="manager-label">Менеджер:</span>
+            <p class="manager-text">Хорошо. Отправлю вам несколько вариантов смет с фотографиями под ваш бюджет сегодня/завтра до [время]. Далее обсудим детали. На этом номере WhatsApp или ТГ у вас есть?</p>
+        </div>
+        <div class="options">
+            <button class="option-btn active-path" data-next-id="end-followup">Да, отправляйте (Конец этапа)</button>
+        </div>
+    </div>
+
+    <!-- ОВ СРАВНИВАЮ КОМПАНИИ -->
+    <div id="block-3-compare" style="display:none;">
+        <div class="manager-speech active-manager">
+            <span class="manager-label">Менеджер:</span>
+            <p class="manager-text">Иван, отлично, что вы собираете предложения. Разброс цен огромный. Чтобы вам было проще принять решение, скидывайте расчеты конкурентов мне в мессенджер. Я сделаю бесплатный аудит (сравню скрытые пункты), такого точно нет в других компаниях.</p>
+        </div>
+        <div class="options">
+            <button class="option-btn active-path" data-next-id="block-3-compare-send">Прислать им нашу смету для аудита.</button>
+        </div>
+    </div>
+
+    <div id="block-3-compare-send" style="display:none;">
+        <div class="manager-speech active-manager">
+            <span class="manager-label">Менеджер:</span>
+            <p class="manager-text">Присылайте любую их смету первым. Я даже не буду смотреть на итоговую сумму. Я посмотрю только две вещи: какие профили используются и расписаны ли все работы. Напишу вам в Макс или ТГ, хорошо?</p>
+        </div>
+        <div class="options">
+            <button class="option-btn active-path" data-next-id="end-followup">Присылает (Конец этапа)</button>
+        </div>
+    </div>
+
+    <!-- ОВ ВЫБРАЛИ ДРУГИХ -->
+    <div id="block-3-chose-others" style="display:none;">
+        <div class="manager-speech active-manager">
+            <span class="manager-label">Менеджер:</span>
+            <p class="manager-text">Свои люди — это отлично, лояльность бесценна. Но часто свои бригады боятся дизайн-проектов. У вас несколько помещений. Отдайте нам хотя бы одно, чтобы мы показали качество работы и гарантии в деле. Вы в любом случае сэкономите время на сравнении.</p>
+        </div>
+        <div class="options">
+            <button class="option-btn active-path" data-next-id="end-minimal">Договорились на 1 помещение (Конец)</button>
+            <button class="option-btn" data-next-id="end-refuse">Категорический отказ (Конец)</button>
+        </div>
+    </div>
+
+    <!-- ОВ МОНТАЖ НЕ ГОРИТ -->
+    <div id="block-3-not-hot" style="display:none;">
+        <div class="manager-speech active-manager">
+            <span class="manager-label">Менеджер:</span>
+            <p class="manager-text">Иван, вижу, что вопрос установки не горит. Ок, закрываем тему монтажа. Но материалы дорожают. Давайте забронируем для вас все комплектующие со сроком на год за 10% от стоимости. Зафиксируем договоренности в договоре, а монтаж организуем, когда потребуется.</p>
+        </div>
+        <div class="options">
+            <button class="option-btn active-path" data-next-id="end-reserve">Бронируем материалы (Конец)</button>
+        </div>
+    </div>
+
+    <!-- ОВ НАВЯЗАЛИ ЗАМЕР -->
+    <div id="block-3-measure" style="display:none;">
+        <div class="manager-speech active-manager">
+            <span class="manager-label">Менеджер:</span>
+            <p class="manager-text">Иван, понимаю, замер бесплатный. Извлеките пользу: теперь вы знаете точные габариты и цену с лучшими комплектующими. Планируете установку НП в будущем вообще?</p>
+        </div>
+        <div class="options">
+            <button class="option-btn active-path" data-next-id="block-3-measure-2">Да, планируем позже.</button>
+            <button class="option-btn" data-next-id="end-no-need">Нет, передумали.</button>
+        </div>
+    </div>
+
+    <div id="block-3-measure-2" style="display:none;">
+        <div class="manager-speech active-manager">
+            <span class="manager-label">Менеджер:</span>
+            <p class="manager-text">Давайте поступим так: по бюджету мы уложились? Если нет — посчитаем под ваши ожидания. Если да — забронируем материалы и цену за вами. Будем периодически на связи, и как только понадобится монтаж — сразу сделаем.</p>
+        </div>
+        <div class="options">
+            <button class="option-btn active-path" data-next-id="end-reserve">Бронируем (Конец)</button>
+        </div>
+    </div>
+
+    <!-- Футер управления -->
+    <div class="controls">
+        <button id="resetBtn" onclick="resetScript()">Начать сначала</button>
+        <button id="showRouteBtn" onclick="toggleRoute()">Показать маршрут</button>
+    </div>
+</div>
+
+<!-- Модальное окно истории пути -->
+<div id="routeModal" class="route-modal">
+    <div class="route-content">
+        <span class="close-route" onclick="toggleRoute()">&times;</span>
+        <h3>История диалога:</h3>
+        <ul id="routeList"></ul>
+    </div>
+</div>
+
+<script>
+let currentBlock = 'block-1';
+const routeHistory = [];
+
+function goToBlock(id) {
+    document.getElementById('options-' + currentBlock.replace('block-', '')).style.display = 'none';
+    
+    const nextSpeech = document.getElementById(id);
+    if (!nextSpeech) return;
+
+    nextSpeech.style.display = 'block';
+    
+    document.querySelectorAll('.manager-speech').forEach(el => el.classList.remove('active-manager'));
+    document.querySelectorAll('.option-btn').forEach(el => el.classList.remove('active-path'));
+    
+    nextSpeech.classList.add('active-manager');
+    
+    routeHistory.push(document.getElementById('text-' + currentBlock.replace('block-', '')).innerText || currentBlock);
+    currentBlock = id;
+
+    const nextOptionsId = 'options-' + id.replace('block-', '');
+    const optionsContainer = document.getElementById(nextOptionsId);
+    if (optionsContainer) {
+        optionsContainer.style.display = 'flex';
+    }
+}
+
+document.querySelectorAll('.option-btn').forEach(btn => {
+    btn.addEventListener('click', function() {
+        this.parentNode.querySelectorAll('.option-btn').forEach(b => b.classList.remove('active-path'));
+        this.classList.add('active-path');
+        
+        const target = this.dataset.nextId;
+        if (target.startsWith('end')) {
+             routeHistory.push(this.innerText);
+             alert('Диалог завершен.');
+        } else {
+            goToBlock(target);
+        }
+    });
+});
+
+function resetScript() {
+    document.querySelectorAll('.manager-speech, .options').forEach(el => el.style.display = 'none');
+    document.querySelectorAll('.option-btn, .manager-speech').forEach(el => el.classList.remove('active-path', 'active-manager'));
+    
+    currentBlock = 'block-1';
+    routeHistory.length = 0;
+    
+    document.getElementById('block-1').style.display = 'block';
+    document.getElementById('block-1').classList.add('active-manager');
+    document.getElementById('options-1').style.display = 'flex';
+}
+
+function toggleRoute() {
+    const modal = document.getElementById('routeModal');
+    const list = document.getElementById('routeList');
+    list.innerHTML = '';
+    routeHistory.forEach(item => {
+        const li = document.createElement('li');
+        li.textContent = item;
+        list.appendChild(li);
+    });
+    modal.style.display = modal.style.display === 'flex' ? 'none' : 'flex';
+}
+</script>
+
+</body>
+</html>
